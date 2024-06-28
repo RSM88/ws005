@@ -42,11 +42,17 @@ function action() {
     });
     */
 
+    const message01 = "test prueba 001";
+
     fetch('/send-message', {
         method: 'POST',
         //body: JSON.stringify({
             //message: message.value
         //}),
+
+        body: JSON.stringify({
+            message: message01
+        }),
 
         headers: {
             'Content-Type': 'application/json'
