@@ -1,0 +1,17 @@
+
+body {
+    margin: 10px;
+    background-color: rgb(65, 0, 56);
+  }
+
+
+  h1 {
+    color: rgb(0, 174, 255);
+  }
+  
+  .btn {
+    color: rgb(0, 255, 64); 
+    background-color: rgb(141, 141, 179);
+    font-weight: bold; 
+    border-radius: 5px;
+  }

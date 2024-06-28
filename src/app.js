@@ -23,7 +23,10 @@ app.use(bodyParser.json());
 app.use(morgan('dev'))
 app.use(express.urlencoded({extended: false}))
 app.use(express.json())
+const path = require('path')
 
+// ---
+app.use(express.static(path.join(__dirname, 'public')));
 //app.use(require('./routes/index'));
 // ---
 
@@ -89,8 +92,8 @@ app.post('/send-message', (req, res) => {
     res.json({ success: true });
 });
 
-app.get('/', (req, res) => {
-    res.status(200).json('Connection OK!');
+app.get('/test001', (req, res) => {
+    res.status(200).json('Connection OK !!!');
 });
 
 
