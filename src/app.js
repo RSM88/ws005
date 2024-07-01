@@ -63,6 +63,7 @@ wss.on('connection', (ws, req) => {
         });
 
         ws.send('Connected to WebSocket server');
+        //ws.send(message);
     });
 });
 
@@ -80,12 +81,22 @@ wss.on('connection', (ws, req) => {
 // clients and sends the message to each one that has an open connection.
 
 app.post('/send-message', (req, res) => {
+    const { title } = req.body;
     const { message } = req.body;
+    //const data = req.data.json()
+
+    const payload = JSON.stringify({
+        title: title,
+        message: message
+    })
 
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             console.log(client, message);
-            client.send("Your message was: " + message);
+            //client.send("Your message was: " + title + message); //bueno
+            //client.send("Your message was: " + data.message);
+            client.send(payload);
+            
         }
     });
 
