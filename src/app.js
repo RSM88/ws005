@@ -68,22 +68,15 @@ wss.on('connection', (ws, req) => {
 });
 
 
-//module.exports = app;
 
-// ---
-//const WebSocket = require('ws');
-
-//const wss = new WebSocket.Server({ server });
 
 // Send Message Endpoint: This endpoint broadcasts a message to 
 // all connected clients.
 // Broadcasting: The server iterates through all connected 
 // clients and sends the message to each one that has an open connection.
-
 app.post('/send-message', (req, res) => {
     const { title } = req.body;
     const { message } = req.body;
-    //const data = req.data.json()
 
     const payload = JSON.stringify({
         title: title,
@@ -92,11 +85,7 @@ app.post('/send-message', (req, res) => {
 
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
-            console.log(client, message);
-            //client.send("Your message was: " + title + message); //bueno
-            //client.send("Your message was: " + data.message);
             client.send(payload);
-            
         }
     });
 
