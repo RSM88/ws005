@@ -43,28 +43,60 @@ const server = app.listen(PORT, () => {
 
 // WebSocket Server Initialization: A WebSocket server is created and associated with the HTTP server.
 const wss = new WebSocket.Server({ server });
+//const wss = new WebSocket.Server({port:4000}); // If needed ws run on different port
 
 // Handling Connections: When a client connects, the server verifies
 // the JWT token and establishes a WebSocket connection.
 wss.on('connection', (ws, req) => {
     // Token Verification: The token from the client's request header is verified.
     // If the token is invalid, the connection is closed.
-    const token = req.headers['authorization'].split(' ')[1];
-    jwt.verify(token, SECRET_KEY, (err, decoded) => {
-        if (err) {
-            ws.close();
-            return;
-        }
+    
+    //const token = req.headers['authorization'].split(' ')[1];
 
-        // Message Handling: The server listens for messages from
-        // the client and can send messages back to the client.
-        ws.on('message', (message) => {
-            console.log('received: %s', message);
+    const token = req.headers['othertoken'];
+
+    /*
+    const token = "empty";
+    try{
+        token = req.headers['authorization'].split(' ')[1];;
+    }catch(e){
+        
+    }
+    if (token == "empty")
+        {
+            try {
+                token = req.headers['othertoken'].split(' ')[1];
+            } catch (error) {
+                
+            }
+        }*/
+    //
+    //
+    console.log('Authorization header:', token);
+
+    try{
+
+        jwt.verify(token, SECRET_KEY, (err, decoded) => {
+            if (err) {
+                //ws.close();
+                ws.send('token verification failed');
+                return;
+            }
+    
+            // Message Handling: The server listens for messages from
+            // the client and can send messages back to the client.
+            ws.on('message', (message) => {
+                console.log('received: %s', message);
+            });
+    
+            ws.send('Connected to WebSocket server');
+            //ws.send(message);
         });
 
-        ws.send('Connected to WebSocket server');
-        //ws.send(message);
-    });
+    } catch(e) {
+        console.log('error: ' + e.message);
+    }
+
 });
 
 
