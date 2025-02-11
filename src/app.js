@@ -32,7 +32,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Subscription Endpoint: This endpoint generates a JWT token when a client subscribes.
 app.post('/subscribe', (req, res) => {
-    const token = jwt.sign({ user: 'android_client' }, SECRET_KEY, { expiresIn: '1h' });
+    //const user_type = req.body['user_type'];
+    const user_type = req.body.user_type;
+    const user_id = 'client_' + Date.now();
+    //const token = jwt.sign({ user: 'android_client' }, SECRET_KEY, { expiresIn: '1h' });
+    const token = jwt.sign({ user: user_id }, SECRET_KEY, { expiresIn: '120s' });
+    console.log(`user  ${user_id} is user-type ${user_type}`);
     res.json({ token });
 });
 
@@ -55,28 +60,27 @@ wss.on('connection', (ws, req) => {
 
     const token = req.headers['othertoken'];
 
-    /*
-    const token = "empty";
-    try{
-        token = req.headers['authorization'].split(' ')[1];;
-    }catch(e){
-        
-    }
-    if (token == "empty")
-        {
-            try {
-                token = req.headers['othertoken'].split(' ')[1];
-            } catch (error) {
-                
-            }
-        }*/
-    //
-    //
+
     console.log('Authorization header:', token);
 
     try{
 
+        /*
+        const payload = {
+            user: 'android_client001',    // Custom claim: Identifies the user or client
+            iat: Math.floor(Date.now() / 1000),  // Issued at: current time in Unix timestamp (seconds)
+            exp: Math.floor(Date.now() / 1000) + 60 // Expiration: token expires in 1 minute
+        };
+        */
+
+        //token = jwt.sign(payload, SECRET_KEY);
+
         jwt.verify(token, SECRET_KEY, (err, decoded) => {
+            console.log('received: %s', decoded);
+           
+            console.log('Issued at:', (new Date(decoded.iat * 1000)).toISOString()); // 'Issued at: 2025-02-11T08:00:03.000Z'
+            console.log('Expires at:', (new Date(decoded.exp * 1000)).toISOString());
+
             if (err) {
                 //ws.close();
                 ws.send('token verification failed');
@@ -127,6 +131,5 @@ app.post('/send-message', (req, res) => {
 app.get('/test001', (req, res) => {
     res.status(200).json('Connection OK !!!');
 });
-
 
 
