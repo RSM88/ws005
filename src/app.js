@@ -50,15 +50,23 @@ const server = app.listen(PORT, () => {
 const wss = new WebSocket.Server({ server });
 //const wss = new WebSocket.Server({port:4000}); // If needed ws run on different port
 
+let clientIdMap = new Map();
+let clientDataMap = new Map();
+
 // Handling Connections: When a client connects, the server verifies
 // the JWT token and establishes a WebSocket connection.
 wss.on('connection', (ws, req) => {
+
+    //const clientId = generateUniqueClientId();
+    //clientIdMap.set(clientId, ws);
+
     // Token Verification: The token from the client's request header is verified.
     // If the token is invalid, the connection is closed.
     
     //const token = req.headers['authorization'].split(' ')[1];
 
     const token = req.headers['othertoken'];
+    const user_type = req.headers['user_type'];
 
 
     console.log('Authorization header:', token);
@@ -76,10 +84,24 @@ wss.on('connection', (ws, req) => {
         //token = jwt.sign(payload, SECRET_KEY);
 
         jwt.verify(token, SECRET_KEY, (err, decoded) => {
-            console.log('received: %s', decoded);
-           
+
+            clientIdMap.set(decoded.user, ws);
+
+            //console.log('received: %s', decoded);
+            console.log('user: %s', decoded.user);
+            console.log('user_type: %s', user_type);
             console.log('Issued at:', (new Date(decoded.iat * 1000)).toISOString()); // 'Issued at: 2025-02-11T08:00:03.000Z'
             console.log('Expires at:', (new Date(decoded.exp * 1000)).toISOString());
+
+
+            clientDataMap.set(decoded.user, {
+                clientId: decoded.user,
+                userType: user_type,
+                ws: ws
+              });
+            //console.log('Data from clientDataMap:');
+            //console.log('clientId: %s', clientDataMap.getClientById(decoded.user).clientId);
+            //console.log('user_type: %s', clientDataMap.getClientById(decoded.user).userType);
 
             if (err) {
                 //ws.close();
@@ -119,9 +141,29 @@ app.post('/send-message', (req, res) => {
         message: message
     })
 
+/*
     wss.clients.forEach(client => {
         if (client.readyState === WebSocket.OPEN) {
             client.send(payload);
+        }
+    });
+*/
+/*
+    clientIdMap.forEach((ws, clientId) => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(payload);
+            console.log('Notification sended to;');
+            console.log('user: %s', clientId);
+        }
+    });
+*/
+    clientDataMap.forEach((clientData, clientId) => {
+
+        if (clientData.ws.readyState === WebSocket.OPEN) {
+            clientData.ws.send(payload);
+            console.log('Notification sended to;');
+            console.log('user: %s', clientId);
+            console.log('userType: %s', clientData.userType);
         }
     });
 
@@ -133,3 +175,11 @@ app.get('/test001', (req, res) => {
 });
 
 
+//----
+function generateUniqueClientId() {
+    return Math.random().toString(36).substring(7);
+}
+
+function getClientById(clientId) {
+    return clientIdMap.get(clientId);
+}
