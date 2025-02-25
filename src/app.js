@@ -135,10 +135,12 @@ wss.on('connection', (ws, req) => {
 app.post('/send-message', (req, res) => {
     const { title } = req.body;
     const { message } = req.body;
+    const { groupe } = req.body;
 
     const payload = JSON.stringify({
         title: title,
-        message: message
+        message: message,
+        groupe: groupe
     })
 
 /*
@@ -159,11 +161,21 @@ app.post('/send-message', (req, res) => {
 */
     clientDataMap.forEach((clientData, clientId) => {
 
-        if (clientData.ws.readyState === WebSocket.OPEN) {
+        /*
+        console.log('userType: %s', clientData.userType);
+        console.log('groupe: %s', groupe);
+
+        if(groupe === clientData.userType) {
+            console.log('Equal!');
+        }
+        */
+       
+        if (clientData.ws.readyState === WebSocket.OPEN && 
+            (groupe === clientData.userType || groupe === '0')) {
             clientData.ws.send(payload);
             console.log('Notification sended to;');
             console.log('user: %s', clientId);
-            console.log('userType: %s', clientData.userType);
+            //console.log('userType: %s', clientData.userType);
         }
     });
 
