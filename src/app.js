@@ -1,122 +1,77 @@
-// El codigo de esta app fue propuesto por Chatgpt:
-// se le pidio generar codio para android (cliente) y nodejs (servidor)
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const WebSocket = require('ws');
-
-//const router = Router()
-
-// ---
 const morgan = require('morgan')
-//const path = require('path')
-// ---
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET_KEY = 'your_secret_key';
+const path = require('path')
 
 // Middleware: is used to parse JSON request bodies.
 app.use(bodyParser.json());
-
-// ---
 app.use(morgan('dev'))
 app.use(express.urlencoded({extended: false}))
 app.use(express.json())
-const path = require('path')
-
-// ---
 app.use(express.static(path.join(__dirname, 'public')));
-//app.use(require('./routes/index'));
-// ---
 
-// Subscription Endpoint: This endpoint generates a JWT token when a client subscribes.
+// Mapa que almacena a todos los usuarios subscritos
+let clientDataMap = new Map();
+
+// Este Endpoint genera un token JWT; asi se suscribe un nuevo cliente
 app.post('/subscribe', (req, res) => {
-    //const user_type = req.body['user_type'];
     const user_type = req.body.user_type;
     const user_id = 'client_' + Date.now();
-    //const token = jwt.sign({ user: 'android_client' }, SECRET_KEY, { expiresIn: '1h' });
-    const token = jwt.sign({ user: user_id }, SECRET_KEY, { expiresIn: '120s' });
+    const token = jwt.sign({ user: user_id }, SECRET_KEY, { expiresIn: '60s' });
     console.log(`user  ${user_id} is user-type ${user_type}`);
     res.json({ token });
 });
 
-// Starting the Server: The Express server starts listening on the defined port.
+// Iniciando el servidor: El servidor queda a la escucha en el puerto indicado.
 const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
-// WebSocket Server Initialization: A WebSocket server is created and associated with the HTTP server.
+// Se inicia servidor WebSocket: se crea y se asocia con el servidor HTTP
 const wss = new WebSocket.Server({ server });
-//const wss = new WebSocket.Server({port:4000}); // If needed ws run on different port
+// Si fuera necesario el WebSocket puede correr en otro puerto
+//const wss = new WebSocket.Server({port:4000});
 
-let clientIdMap = new Map();
-let clientDataMap = new Map();
-
-// Handling Connections: When a client connects, the server verifies
-// the JWT token and establishes a WebSocket connection.
+// Se gestionan las conexiones:
+// Al conectarse un cliente se verifica el token y 
+// se establece un canal de conexion WebSocket
 wss.on('connection', (ws, req) => {
-
-    //const clientId = generateUniqueClientId();
-    //clientIdMap.set(clientId, ws);
-
-    // Token Verification: The token from the client's request header is verified.
-    // If the token is invalid, the connection is closed.
-    
-    //const token = req.headers['authorization'].split(' ')[1];
 
     const token = req.headers['othertoken'];
     const user_type = req.headers['user_type'];
-
 
     console.log('Authorization header:', token);
 
     try{
 
-        /*
-        const payload = {
-            user: 'android_client001',    // Custom claim: Identifies the user or client
-            iat: Math.floor(Date.now() / 1000),  // Issued at: current time in Unix timestamp (seconds)
-            exp: Math.floor(Date.now() / 1000) + 60 // Expiration: token expires in 1 minute
-        };
-        */
-
-        //token = jwt.sign(payload, SECRET_KEY);
-
+        // Se verifica token
         jwt.verify(token, SECRET_KEY, (err, decoded) => {
 
-            clientIdMap.set(decoded.user, ws);
-
-            //console.log('received: %s', decoded);
-            console.log('user: %s', decoded.user);
-            console.log('user_type: %s', user_type);
-            console.log('Issued at:', (new Date(decoded.iat * 1000)).toISOString()); // 'Issued at: 2025-02-11T08:00:03.000Z'
-            console.log('Expires at:', (new Date(decoded.exp * 1000)).toISOString());
-
-
+            // Se almacena la conexion WebSocket del cliente
+            // en turno y  se asocia con un ID
             clientDataMap.set(decoded.user, {
                 clientId: decoded.user,
                 userType: user_type,
-                ws: ws
+                ws: ws 
               });
-            //console.log('Data from clientDataMap:');
-            //console.log('clientId: %s', clientDataMap.getClientById(decoded.user).clientId);
-            //console.log('user_type: %s', clientDataMap.getClientById(decoded.user).userType);
-
+ 
             if (err) {
-                //ws.close();
                 ws.send('token verification failed');
                 return;
             }
     
-            // Message Handling: The server listens for messages from
-            // the client and can send messages back to the client.
+            // Se gestionan mensajes: 
+            // El servidor escucha mensajes del cliente
             ws.on('message', (message) => {
-                console.log('received: %s', message);
+                console.log('Received from Client: %s', message);
             });
     
             ws.send('Connected to WebSocket server');
-            //ws.send(message);
         });
 
     } catch(e) {
@@ -125,73 +80,31 @@ wss.on('connection', (ws, req) => {
 
 });
 
-
-
-
-// Send Message Endpoint: This endpoint broadcasts a message to 
-// all connected clients.
-// Broadcasting: The server iterates through all connected 
-// clients and sends the message to each one that has an open connection.
+// Endpiont que recive peticion POST:
+// Gestiona el envio de mensajes a los clientes conectados.
 app.post('/send-message', (req, res) => {
     const { title } = req.body;
     const { message } = req.body;
-    const { groupe } = req.body;
+    //const { groupe } = req.body;
 
     const payload = JSON.stringify({
         title: title,
         message: message,
-        groupe: groupe
+        //groupe: groupe
     })
 
-/*
-    wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(payload);
-        }
-    });
-*/
-/*
-    clientIdMap.forEach((ws, clientId) => {
-        if (ws.readyState === WebSocket.OPEN) {
-            ws.send(payload);
-            console.log('Notification sended to;');
-            console.log('user: %s', clientId);
-        }
-    });
-*/
+    // Se utiliza el Mapa con el listados de todos los clientes
+    // conectados para enviar el mensaje
     clientDataMap.forEach((clientData, clientId) => {
-
-        /*
-        console.log('userType: %s', clientData.userType);
-        console.log('groupe: %s', groupe);
-
-        if(groupe === clientData.userType) {
-            console.log('Equal!');
-        }
-        */
        
-        if (clientData.ws.readyState === WebSocket.OPEN && 
-            (groupe === clientData.userType || groupe === '0')) {
+        if (clientData.ws.readyState === WebSocket.OPEN /*&& 
+            (groupe === clientData.userType || groupe === '0')*/) {
             clientData.ws.send(payload);
             console.log('Notification sended to;');
             console.log('user: %s', clientId);
-            //console.log('userType: %s', clientData.userType);
         }
     });
 
     res.json({ success: true });
 });
 
-app.get('/test001', (req, res) => {
-    res.status(200).json('Connection OK !!!');
-});
-
-
-//----
-function generateUniqueClientId() {
-    return Math.random().toString(36).substring(7);
-}
-
-function getClientById(clientId) {
-    return clientIdMap.get(clientId);
-}
