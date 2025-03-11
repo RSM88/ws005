@@ -85,20 +85,31 @@ wss.on('connection', (ws, req) => {
 app.post('/send-message', (req, res) => {
     const { title } = req.body;
     const { message } = req.body;
-    //const { groupe } = req.body;
+    const { groupe } = req.body;
 
     const payload = JSON.stringify({
         title: title,
         message: message,
-        //groupe: groupe
+        groupe: groupe
     })
+
+
 
     // Se utiliza el Mapa con el listados de todos los clientes
     // conectados para enviar el mensaje
     clientDataMap.forEach((clientData, clientId) => {
+
+        // ---
+        console.log('userType: %s', clientData.userType);
+        console.log('groupe: %s', groupe);
+        // ---
+    
+        if(groupe === clientData.userType) {
+            console.log('Equal!');
+        }
        
-        if (clientData.ws.readyState === WebSocket.OPEN /*&& 
-            (groupe === clientData.userType || groupe === '0')*/) {
+        if (clientData.ws.readyState === WebSocket.OPEN &&
+            (groupe === clientData.userType || groupe === '0')) {
             clientData.ws.send(payload);
             console.log('Notification sended to;');
             console.log('user: %s', clientId);
